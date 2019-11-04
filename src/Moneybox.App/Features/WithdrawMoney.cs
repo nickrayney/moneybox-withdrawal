@@ -17,7 +17,24 @@ namespace Moneybox.App.Features
 
         public void Execute(Guid fromAccountId, decimal amount)
         {
-            // TODO:
+            var from = this.accountRepository.GetAccountById(fromAccountId);
+
+            // Check the account has sufficient funds
+            if (!from.CanWithdrawAmount(amount))
+            {
+                throw new InvalidOperationException("Insufficient funds to make withdrawal");
+            }
+
+            if (from.WillLeaveLowFunds(amount))
+            {
+                this.notificationService.NotifyFundsLow(from.User.Email);
+            }
+
+            // If we got here without throwing an exception we can make the withdrawal
+            from.WithdrawFunds(amount);
+
+            this.accountRepository.Update(from);
+
         }
     }
 }
